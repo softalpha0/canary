@@ -1,0 +1,41 @@
+{
+  "network": "qorechain-diana/9800",
+  "date": "2026-11-22T21:06:07.441Z",
+  "counter": {
+    "address": "0x66b774a7c51089162cfcab2eade7c624135f3a9c",
+    "tx": "0xc3fdc329272b0dfa21fe00c9dde2812292b4d93437ed4f55fcda9073b1146469",
+    "block": "10575451"
+  },
+  "pqProbe": {
+    "address": "0xc8815608dbf829a9a42e80c3392c17b091a85e0f",
+    "tx": "0x29b69e0eb0cf9672604267e7318e2efeb00f4c5cc10e5951f7329bdd8c1db76f",
+    "block": "10575452"
+  },
+  "windows": {
+    "unscoped": "610C8E8E59BB66F44D4C109A161F34F655D9470C9CD9DEE2E5D0AE496A19BA96",
+    "scoped": "F9D069B98D065C53EEF2FD9F85C78A88280C913700823672724022C8EA1017F6"
+  },
+  "allowedCall": {
+    "tx": "0x45cbdf4f64b719ec1c4f45ff13f583fd2db7822cae405267346b0237fc8085e6",
+    "gasUsed": "500000",
+    "status": "success"
+  },
+  "refusedCall": {
+    "message": "failed to broadcast transaction: the EVM authorisation window for qor1l69nm6wn5s999z4t0wtxum3xm58x3z4wghxvu9 does not admit this transaction: the window does not list 0x66B774a7C51089162CFCAB2Eade7C624135f3A9c as an allowed recipient: EVM authorisation window exhausted: EVM authorisation window exhausted [cosmossdk.io/errors@v1.0.2/errors.go:77]",
+    "classified": "exhausted"
+  },
+  "forgeScriptCounter": {
+    "address": "0x95D0A6F4E64989336B776d142AbAf5C675280A3B",
+    "tx": "0xdb5af29daf64fbcaba0d04be865786a43deb7b5ba0eb2973227357499a9a6362",
+    "block": "10575513",
+    "window": "264D73FFD5069FA662D87EE5AE83D0245A815602D58014EA3BB223832F49E002"
+  },
+  "s4Window": {
+    "tx": "5BFC85182512DA7D8AF1B27FE998E90E8D8766147D590FDD02F4D4A24E83993E",
+    "height": 10575534,
+    "targets": [
+      "0x66b774a7c51089162cfcab2eade7c624135f3a9c",
+      "0xc8815608dbf829a9a42e80c3392c17b091a85e0f"
+    ]
+  }
+}

@@ -19,11 +19,15 @@ Changes to, or clarifications of, the plan in `docs/plan/`, with reasons (AGENT_
 
 Scripts load `.env` with Node's built-in `process.loadEnvFile` (Node ≥ 20.12), so no dependency is added outside the plan (AGENT_BRIEF §4).
 
-## D-004 — Gas for PQ-authorised calls is higher than the plan assumed · 2026-11-22 — **ASK (informational)**
+## D-004 — Gas for PQ-authorised calls; set limits from estimates · 2026-11-22 (updated after S2)
 
-- Plan 03 says `pqcVerify` costs ~85–90k per call and an authorised call ~250–350k. Measured: a bare `pqcVerify` `eth_call` estimates at **~312k gas** (S3). With calldata (4,627-byte signature) and `pqcKeyStatus`, an authorised call may need **~400–500k**.
-- Impact: about 0.04–0.05 QOR per authorised call at the 0.1 uqor/gas floor. That is still well inside the faucet budget. The app's starting gas limit of 600k (plan 06) may need to go to ~800k; S2 will measure the real in-contract number (`PQProbe.probe`) and I'll set the limits from that.
-- No design change proposed. Owner: no action needed unless you object.
+- Plan 03 estimated ~250–350k gas per authorised call. **Measured (S2):** a PQ-authorised call with a 4,627-byte signature (`PQProbe.probe`) needs **~235k gas**, and in-contract `pqcKeyStatus` + `pqcVerify` cost ~154k. Within the plan's range.
+- **New fact:** the chain charges `gasUsed ≥ 50% of the gas limit` (every S2 receipt: exactly 0.500 × limit). A flat 600k limit (plan 06 §5) would cost 300k gas, more than needed. Decision: scripts and the app set `gas = eth_estimateGas × 1.25`, with a fixed fallback only if estimation fails. Plan 05 warns that estimation can fail; on this RPC it worked for every call in S2.
+- Cost: about 0.03–0.04 QOR per authorised call. No design change.
+
+## D-007 — Primary deploy route: viem · 2026-11-22
+
+Both routes deployed successfully in S2. But `forge script` executes the script locally before broadcasting, and local EVMs lack the `0x…0a02` precompile that the CoverPool constructor calls, so it would revert there. Canary deploys with `scripts/deploy.ts` (viem + Foundry artifacts + runtime-code check), as plan 05 §Deploying allows. `forge script` stays available through `scripts/forge-script.ts` for contracts that don't touch the precompiles.
 
 ## D-005 — Spike contracts live in `contracts/test/spikes/` · 2026-11-22
 

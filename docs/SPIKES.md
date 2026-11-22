@@ -30,7 +30,7 @@ All verified in the installed package's own type declarations / README (not from
 
 ## S1 — Accounts, ML-DSA-87 registration with proof, derived == on-chain pubkey
 
-**Status: PARTIAL — offline half PASS; on-chain half BLOCKED on faucet funds (owner).**
+**Status: PASS (2026-11-22)** — all 4 accounts registered with proof of possession; on-chain key == SDK key == qoresign key.
 
 Accounts were created with the SDK instead of `qorechaind keys add` (same key type: eth_secp256k1, coin type 60; see `DECISIONS.md` D-002):
 
@@ -52,33 +52,64 @@ buyer1    pubkey 2592B keccak=0x8f0034b8c889406c… qoresign==sdk: true
 reporter  pubkey 2592B keccak=0x9118dd3a2300998e… qoresign==sdk: true
 ```
 
-**On-chain (pending):** `pnpm --filter scripts spike:s1` registers each key via `MsgRegisterPQCKeyV2` (classical-signed bootstrap, `keyType: "hybrid"`, with `proofOfPossession`), then reads `pqcKeyStatus(0x…)` through `eth_call` and requires `(true, 1, <2592 bytes>, true)` plus on-chain pubkey == SDK pubkey == qoresign pubkey.
+**On-chain** — `pnpm --filter scripts spike:s1` sends `MsgRegisterPQCKeyV2` (classical-signed bootstrap via `EthNativeSigner`, `keyType: "hybrid"`, with `proofOfPossession`). It then reads `pqcKeyStatus(0x…)` via `eth_call` and requires `(true, 1, <2592 bytes>, true)` and on-chain pubkey == SDK pubkey == qoresign pubkey:
 
-| Account | Registration tx | pqcKeyStatus | Result |
-|---|---|---|---|
-| deployer | _pending_ | | |
-| lp1 | _pending_ | | |
-| buyer1 | _pending_ | | |
-| reporter | _pending_ | | |
+```text
+deployer: MsgRegisterPQCKeyV2 tx 68C64149B3BB9369F3725C6B7E0C04348B690202F021DE8489795A8CA227D7CC height 10575411
+  pqcKeyStatus(0xfE8b3De9D3A40a528aaB7B966e6e26DD0e688aae) = (true, 1, <2592 bytes>, true)  onchain==sdk: true  onchain==qoresign: true  → PASS
+lp1: MsgRegisterPQCKeyV2 tx 54293291CE0C7FA4A2C98FA18565C678B1F79245854ADDA3B82492AE7170FB22 height 10575431
+  pqcKeyStatus(0xa71ddC5e470130248D396d966b1956CF3f7c9eEb) = (true, 1, <2592 bytes>, true)  onchain==sdk: true  onchain==qoresign: true  → PASS
+buyer1: MsgRegisterPQCKeyV2 tx E3C64EC3FC3445D23217AF343C95E685D48EB58FA4BADB8A7884F2EB4AF1EE55 height 10575433
+  pqcKeyStatus(0x4DF6ED71f117dfFfB2e64Dab748A061f3A71e52B) = (true, 1, <2592 bytes>, true)  onchain==sdk: true  onchain==qoresign: true  → PASS
+reporter: MsgRegisterPQCKeyV2 tx B0782133FF8788A59569ADB3B9150746A36EAC701B9943E41B670227D491CD67 height 10575435
+  pqcKeyStatus(0xf85f3fF485e0F2Dc0CBaA0D395e775c5f6598Dc7) = (true, 1, <2592 bytes>, true)  onchain==sdk: true  onchain==qoresign: true  → PASS
+S1: PASS
+```
 
-Observed already: `pqcKeyStatus` on an **unregistered** account returns 160 bytes (`registered=false`, empty `pubkey`), so PQAuth's "returndata ≥ 128 bytes" check holds and decoding then rejects on `registered == false`.
+Funding: the owner claimed 100 QOR from the faucet into `deployer`. Deployer then sent QOR to the others with **hybrid ML-DSA-87-signed** bank sends (`pnpm accounts fund`), which is also evidence for the "hybrid ML-DSA-87 transactions" network feature:
+
+| Transfer | Tx | Height |
+|---|---|---|
+| deployer → lp1, 30 QOR | `05E29506AC77201FBD93BE44A204019D4F47DD8403AEDE05DC6B4EBAEA675E8A` | 10575420 |
+| deployer → buyer1, 10 QOR | `A0441F4BFBF24864FC53754C6171822EA55F088BC48160DEE3B0514332069EEB` | 10575423 |
+| deployer → reporter, 5 QOR | `040CB8EB3B9939BB2C81FC3E31580408AB25E62936452FFA30AAFD67B70ECB53` | 10575426 |
+
+Also observed: `pqcKeyStatus` on an **unregistered** account returns 160 bytes (`registered=false`, empty `pubkey`), so PQAuth's "returndata ≥ 128 bytes" check holds and decoding then rejects on `registered == false`.
 
 ## S2 — Deploy route, scoped window admits targets / refuses others
 
-**Status: BLOCKED on S1 (needs a funded, registered deployer).** Ready to run.
+**Status: PASS (2026-11-22).** Both deploy routes work; the scoped window admits the listed target and refuses a non-target.
 
-- Contracts: `contracts/test/spikes/Counter.sol`, `contracts/test/spikes/PQProbe.sol` (PQProbe calls both precompiles with low-level `staticcall` + length checks, the PQAuth pattern). `forge build` passes.
-- Route A (viem): `pnpm --filter scripts spike:s2` — opens an unscoped window, deploys both with explicit gas (1.5M), checks on-chain runtime code == artifact `deployedBytecode`, opens a window scoped to `[PQProbe]`, calls `PQProbe.probe(sig, digest)` with a real ML-DSA-87 signature (expected: admitted), then `Counter.increment()` (expected: refused, pqc code 27). Writes `deployments/spikes.json`.
-- Route B (forge script): to try after route A, with `--skip-simulation --gas-limit` as the plan suggests. Command and outcome will be recorded here.
+### Route A — viem (`pnpm --filter scripts spike:s2`)
 
-| Step | Tx | Result |
-|---|---|---|
-| Unscoped window | _pending_ | |
-| Counter deploy | _pending_ | |
-| PQProbe deploy | _pending_ | |
-| Scoped window `[PQProbe]` | _pending_ | |
-| Allowed `PQProbe.probe` | _pending_ | gas used: |
-| Refused `Counter.increment` | n/a | error / code: |
+```text
+fees: maxFeePerGas=132500000000 maxPriorityFeePerGas=12500000000
+unscoped window: tx 610C8E8E59BB66F44D4C109A161F34F655D9470C9CD9DEE2E5D0AE496A19BA96 height 10575443
+Counter: 0x66b774a7c51089162cfcab2eade7c624135f3a9c tx 0xc3fdc329272b0dfa21fe00c9dde2812292b4d93437ed4f55fcda9073b1146469 block 10575451 gasUsed 750000 runtimeCodeMatches=true
+PQProbe: 0xc8815608dbf829a9a42e80c3392c17b091a85e0f tx 0x29b69e0eb0cf9672604267e7318e2efeb00f4c5cc10e5951f7329bdd8c1db76f block 10575452 gasUsed 750000 runtimeCodeMatches=true
+scoped window (targets=[PQProbe]): tx F9D069B98D065C53EEF2FD9F85C78A88280C913700823672724022C8EA1017F6 height 10575453
+window: live=true targets=0xc8815608dbf829a9a42e80c3392c17b091a85e0f remainingTxs=4
+ALLOWED PQProbe.probe: tx 0x45cbdf4f64b719ec1c4f45ff13f583fd2db7822cae405267346b0237fc8085e6 status success gasUsed 500000
+  event KeyStatus {"account":"0xfE8b…8aae","registered":true,"algorithmId":1,"pubkeyLength":"2592","proven":true}
+  event Verified {"caller":"0xfE8b…8aae","valid":true,"gasUsed":"153786"}
+REFUSED Counter.increment (non-target): failed to broadcast transaction: the EVM authorisation window for qor1l69nm6wn5s999z4t0wtxum3xm58x3z4wghxvu9 does not admit this transaction: the window does not list 0x66B774a7C51089162CFCAB2Eade7C624135f3A9c as an allowed recipient: EVM authorisation window exhausted  classify=exhausted
+window after: usedTxs=1 remainingTxs=3 usedValue=132500uqor
+S2: PASS
+```
+
+The allowed tx is also the **first on-chain PQ-authorised call**: a contract looked up the sender's registered ML-DSA-87 key with `pqcKeyStatus` and verified a real signature with `pqcVerify` inside a transaction (`valid: true`).
+
+### Route B — `forge script` (`tsx scripts/forge-script.ts --account deployer -- script/SpikeDeploy.s.sol:SpikeDeploy --broadcast --skip-simulation --gas-estimate-multiplier 130`)
+
+From a fresh unscoped window (`264D73FFD5069FA662D87EE5AE83D0245A815602D58014EA3BB223832F49E002`): `ONCHAIN EXECUTION COMPLETE & SUCCESSFUL`. Counter at `0x95D0A6F4E64989336B776d142AbAf5C675280A3B`, tx `0xdb5af29daf64fbcaba0d04be865786a43deb7b5ba0eb2973227357499a9a6362`, block 10575513, status 1, gasUsed 109,605; on-chain code == artifact. The key reaches forge only via the child process's `PRIVATE_KEY` env (`vm.envUint`); it is never printed.
+
+**Caveat:** forge still executes the script locally before broadcasting, and local EVMs have no `0x…0a02`. CoverPool's constructor calls `pqcKeyStatus(admin)`, which would fail closed there. **Primary deploy route for Canary: viem (`scripts/deploy.ts`)**, the route proven above.
+
+### Findings that change implementation details
+
+1. **Refusal code.** The EVM JSON-RPC returns the refusal as text, not a numeric `pqc` code. The text names the code-27 error ("EVM authorisation window exhausted") and the reason ("does not list 0x… as an allowed recipient"). `classifyEvmWindowRejection` maps an **out-of-scope** refusal to `"exhausted"`, so the app must also match "does not list … as an allowed recipient" and tell the user to open a window that includes Canary's contracts, not just "open a new window".
+2. **Gas: the chain charges at least 50% of the gas limit.** Every receipt shows `gasUsed = gasLimit × 0.500` (1.5M → 750,000; 1M → 500,000), although real needs are much lower (`spike-logs/s2-gas.log`): deploy Counter 109,605, deploy PQProbe 526,146, **PQ-authorised call (`probe`, 4,627-byte sig) 235,076**. In-contract `pqcKeyStatus` + `pqcVerify` cost 153,786. Gas limits must be set from `eth_estimateGas × 1.25`, not padded flat limits. See `DECISIONS.md` D-004.
+3. Window value accounting matches the docs: one admitted tx with a 1,000,000 gas limit at 132.5 gwei used 132,500 uqor of `maxValue`.
 
 ## S3 — pqcVerify with real ML-DSA-87 signatures
 
@@ -99,13 +130,13 @@ inactive precompile 0x…0800 returndata: null
 S3 TRACK B: PASS
 ```
 
-(Full log: `docs/spike-logs/s3-trackb-2026-11-22.log`.) Signature from `mldsa.sign(secretKey, digest)` (`@qorechain/pqc`, key from the account mnemonic). A read-only `eth_call` proves the precompile's verdict; it needs no window or registration. The on-chain tx version runs inside S2 (`PQProbe.probe`).
+(Full log: `docs/spike-logs/s3-trackb-2026-11-22.log`.) Signature from `mldsa.sign(secretKey, digest)` (`@qorechain/pqc`, key from the account mnemonic). A read-only `eth_call` proves the precompile's verdict; it needs no window or registration. The on-chain tx version ran in S2 (`PQProbe.probe`, tx `0x45cbdf4f…85e6`, `valid: true`).
 
 Conclusions:
 1. `pqcVerify(pubkey, mldsa.sign(sk, digest), digest)` returns `true` for the raw 32 digest bytes: **`MODE_RAW` works.**
 2. Tampered message, wrong key and a signature with one trailing byte all return `false` (no revert), as documented.
 3. Hedged and deterministic signatures both verify.
-4. **Gas is much higher than the plan's figure.** A direct `pqcVerify` call estimates at ~312k gas, against the plan's "about 85,000–90,000 per call". An authorised Canary call will probably need ~400k+. S2 measures the real in-contract figure. See `DECISIONS.md` D-004.
+4. Gas: a bare `pqcVerify` `eth_call` estimates at ~312k. **Superseded by S2:** inside a tx, key lookup + verify cost ~154k, and a full PQ-authorised call ~235k (see S2 findings, `DECISIONS.md` D-004).
 5. An inactive precompile returns success with **empty** data: confirms PQAuth must fail closed on short returndata.
 
 ### Track A (QoreX `signArbitrary`) — **PENDING (owner, browser)**
@@ -114,7 +145,9 @@ Tool: `pnpm --filter scripts spike:page` → open `http://localhost:5174` with Q
 
 ## S4 — MetaMask tx on chain 9800 inside a scoped window
 
-**Status: BLOCKED on S1/S2 + owner (MetaMask).** Ready: the same spike page, section S4 (adds/switches chain 9800, sends `Counter.increment()`). Then `pnpm --filter scripts spike:s4 <hash>` parses the receipt with viem and lists any non-standard receipt fields (e.g. `feePayer`).
+**Status: READY — waiting on the owner (MetaMask).** A scoped window is open on `deployer` for this test: tx `5BFC85182512DA7D8AF1B27FE998E90E8D8766147D590FDD02F4D4A24E83993E`, height 10575534 → expires 10592814 (~5 h), 5 txs, 1 QOR. Targets: Counter `0x66b774a7c51089162cfcab2eade7c624135f3a9c` and PQProbe `0xc8815608dbf829a9a42e80c3392c17b091a85e0f`.
+
+Steps: import `deployer` into MetaMask → `pnpm --filter scripts spike:page` → `http://localhost:5174`, section S4, Counter = `0x66b774a7c51089162cfcab2eade7c624135f3a9c` → connect → send. Then `pnpm --filter scripts spike:s4 <hash>` parses the receipt with viem and lists any non-standard receipt fields (e.g. `feePayer`).
 
 ## S5 — eth_getLogs max block range — **PASS** (2026-11-22)
 
