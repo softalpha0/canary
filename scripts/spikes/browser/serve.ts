@@ -14,7 +14,9 @@ export const S3A_DIGEST = keccak256(toBytes("Canary spike S3 track A"));
 const html = readFileSync(resolve(here, "index.html"), "utf8")
   .replace("__DIGEST__", S3A_DIGEST)
   .replace("__SEL_VERIFY__", toFunctionSelector("pqcVerify(bytes,bytes,bytes)").slice(2))
-  .replace("__SEL_KEYSTATUS__", toFunctionSelector("pqcKeyStatus(address)").slice(2));
+  .replace("__SEL_KEYSTATUS__", toFunctionSelector("pqcKeyStatus(address)").slice(2))
+  .replace("__COUNTER__", "0x66b774a7c51089162cfcab2eade7c624135f3a9c")
+  .replaceAll("__DEPLOYER__", "0xfE8b3De9D3A40a528aaB7B966e6e26DD0e688aae");
 
 const port = Number(process.env.PORT ?? 5174);
 createServer((req, res) => {

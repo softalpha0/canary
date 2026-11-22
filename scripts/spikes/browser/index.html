@@ -25,7 +25,7 @@
   <h2>S4 — MetaMask tx inside a scoped window</h2>
   <section>
     <p>Prereq: the account imported into MetaMask is <b>deployer</b> (from <code>.env</code>), and the agent has opened a scoped window whose targets include the Counter below.</p>
-    <label>Counter address (target)<input id="counter" placeholder="0x…"></label>
+    <label>Counter address (target)<input id="counter" value="__COUNTER__" placeholder="0x…"></label>
     <p>
       <button id="mm-connect">1. Connect MetaMask + switch to 9800</button>
       <button id="mm-send">2. Send Counter.increment()</button>
@@ -101,6 +101,7 @@ $("mm-connect").onclick = async () => {
     [mmAccount] = await window.ethereum.request({ method: "eth_requestAccounts" });
     const cid = await window.ethereum.request({ method: "eth_chainId" });
     log(`[S4] MetaMask account ${mmAccount} chainId ${cid}`);
+    if (mmAccount.toLowerCase() !== "__DEPLOYER__".toLowerCase()) log(`[S4] ⚠ This is not deployer (__DEPLOYER__). Switch MetaMask to the imported deployer account and click Connect again — only deployer has the PQC key and the scoped window.`);
   } catch (e) { log(`[S4] connect error: ${e.message || e}`); }
 };
 $("mm-send").onclick = async () => {
@@ -135,15 +136,34 @@ $("qx-connect").onclick = async () => {
   } catch (e) { log(`[S3A] connect error: ${e.message || e}`); }
 };
 
-function decodeSig(ret) {
-  const raw = ret && typeof ret === "object" ? (ret.signature ?? ret.sig ?? ret.pqcSignature ?? ret) : ret;
+// Render a QoreX return value with long strings shortened, so field names and encodings are visible.
+function shapeOf(v, depth = 0) {
+  if (v instanceof Uint8Array) return `Uint8Array(${v.length})`;
+  if (typeof v === "string") return v.length > 40 ? `str(${v.length}):${v.slice(0, 12)}…` : JSON.stringify(v);
+  if (v && typeof v === "object" && depth < 3) return "{" + Object.entries(v).map(([k, x]) => `${k}: ${shapeOf(x, depth + 1)}`).join(", ") + "}";
+  return JSON.stringify(v);
+}
+function toBytesAny(raw) {
   if (raw instanceof Uint8Array) return { bytes: raw, form: "Uint8Array" };
+  if (Array.isArray(raw)) return { bytes: Uint8Array.from(raw), form: "number[]" };
   if (typeof raw === "string") {
     if (/^(0x)?[0-9a-fA-F]+$/.test(raw) && raw.replace(/^0x/, "").length % 2 === 0) return { bytes: fromHex(raw), form: raw.startsWith("0x") ? "hex 0x" : "hex" };
     try { return { bytes: fromB64(raw), form: "base64" }; } catch {}
   }
+  if (raw && typeof raw === "object") {
+    for (const k of ["signature", "sig", "value", "key", "data"]) if (k in raw) { const r = toBytesAny(raw[k]); if (r.bytes) return { ...r, form: `${k}:${r.form}` }; }
+  }
   return { bytes: null, form: typeof raw };
 }
+// The ML-DSA signature is in ret.pq (ret.signature is the 64-byte classical secp256k1 one).
+function pqParts(ret) {
+  const pq = ret && ret.pq;
+  const sig = toBytesAny(pq && typeof pq === "object" && !(pq instanceof Uint8Array) ? (pq.signature ?? pq.sig ?? pq) : pq);
+  let pk = { bytes: null, form: "none" };
+  if (pq && typeof pq === "object") for (const k of ["pub_key", "pubKey", "publicKey", "public_key"]) if (pq[k]) { pk = toBytesAny(pq[k]); pk.form = `pq.${k}:${pk.form}`; break; }
+  return { sig, pk };
+}
+const b64 = (u8) => btoa(String.fromCharCode(...u8));
 
 $("qx-run").onclick = async () => {
   if (!qx || !pubkey) return log("[S3A] connect QoreX first");
@@ -158,20 +178,24 @@ $("qx-run").onclick = async () => {
   for (const c of candidates) {
     try {
       const ret = await qx.signArbitrary(CHAIN_ID, bech, c.data);
-      const shape = ret && typeof ret === "object" && !(ret instanceof Uint8Array) ? Object.keys(ret) : typeof ret;
-      const { bytes: sig, form } = decodeSig(ret);
-      log(`[S3A] ${c.name}: returned ${JSON.stringify(shape)}, signature form=${form}, ${sig ? sig.length : "?"} bytes`);
-      if (!sig) continue;
+      log(`[S3A] ${c.name}: returned ${shapeOf(ret)}`);
+      const { sig, pk } = pqParts(ret);
+      log(`      pq signature: form=${sig.form}, ${sig.bytes ? sig.bytes.length : "?"} bytes; pq pubkey: form=${pk.form}, ${pk.bytes ? pk.bytes.length : "-"} bytes${pk.bytes ? (hex(pk.bytes) === hex(pubkey) ? " (== registered key)" : " (DIFFERS from registered key)") : ""}`);
+      if (!sig.bytes) continue;
+      const keys = [["registered", pubkey]];
+      if (pk.bytes && pk.bytes.length === 2592 && hex(pk.bytes) !== hex(pubkey)) keys.push(["qorex pq.pub_key", pk.bytes]);
       const msgs = [
         ["prefix ‖ data", concat(prefix, c.bytes)],
         ["data only", c.bytes],
         ["raw digest", d],
+        ["prefix ‖ base64(data)", concat(prefix, enc.encode(b64(c.bytes)))],
+        ["prefix ‖ hex(data)", concat(prefix, enc.encode(hex(c.bytes).slice(2)))],
       ];
-      for (const [mname, m] of msgs) {
-        const r = await ethCall(PQC_VERIFY, "0x" + SEL_VERIFY + encVerifyBody(pubkey, sig, m));
+      for (const [kname, key] of keys) for (const [mname, m] of msgs) {
+        const r = await ethCall(PQC_VERIFY, "0x" + SEL_VERIFY + encVerifyBody(key, sig.bytes, m));
         const ok = BigInt(r || "0x0") === 1n;
-        log(`      pqcVerify(message = ${mname}, ${m.length}B) → ${ok ? "TRUE ✓" : "false"}`);
-        results.push({ input: c.name, sigForm: form, sigLen: sig.length, message: mname, ok });
+        log(`      pqcVerify(key=${kname}, message=${mname}, ${m.length}B) → ${ok ? "TRUE ✓" : "false"}`);
+        results.push({ input: c.name, sigForm: sig.form, sigLen: sig.bytes.length, key: kname, message: mname, ok });
       }
     } catch (e) { log(`[S3A] ${c.name}: error ${e.message || e}`); }
   }
