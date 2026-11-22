@@ -1,0 +1,6 @@
+Counter.increment from deployer via viem: 0xa2db35a1d8a36eaa5bc8e2b574c21285bfbd644ba37398176041f96d80a8e5d4 (gas limit 56185)
+tx 0xa2db35a1d8a36eaa5bc8e2b574c21285bfbd644ba37398176041f96d80a8e5d4: from 0xfe8b3de9d3a40a528aab7b966e6e26dd0e688aae to 0x66b774a7c51089162cfcab2eade7c624135f3a9c type eip1559 chainId 9800 nonce 12
+receipt: status success block 10577106 gasUsed 44948 effectiveGasPrice 112500000000
+non-standard receipt fields: none
+event Incremented {"by":"0xfE8b3De9D3A40a528aaB7B966e6e26DD0e688aae","number":"1"}
+S4: PASS

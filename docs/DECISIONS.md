@@ -2,11 +2,11 @@
 
 Changes to, or clarifications of, the plan in `docs/plan/`, with reasons (AGENT_BRIEF §1.3). Items marked **ASK** need the owner's answer.
 
-## D-001 — `msgMode` = `MODE_RAW` (provisional) · 2026-11-22
+## D-001 — `msgMode` = `MODE_RAW` (final) · 2026-11-22
 
-- **Decision:** deploy both pools with `msgMode = MODE_RAW` (0): `pqcVerify` gets the raw 32-byte action digest.
-- **Evidence:** S3 Track B PASS (`docs/SPIKES.md`). A real ML-DSA-87 signature over a raw digest verifies on testnet; tampered inputs fail.
-- **Pending:** S3 Track A (QoreX) needs the owner's browser run. If an encoding passes, we switch to `MODE_QOREX` with that encoding before the M2 deploy (it is an immutable constructor arg). If no encoding passes, `MODE_RAW` is final and the app uses the "Sign with the Canary CLI" modal (plan 02 §Track B).
+- **Decision:** deploy both pools with `msgMode = MODE_RAW` (0): `pqcVerify` gets the raw 32-byte action digest, signed with Track B (`scripts/pq-sign.ts`, key from the owner's mnemonic).
+- **Evidence:** S3 Track B PASS, by `eth_call` and in a real tx (`PQProbe.probe`, `0x45cbdf4f…85e6`).
+- S3 Track A (QoreX) was not settled; the owner skipped it (SPIKES.md S3). Per plan 02, the app shows the "Sign with the Canary CLI" step. `MODE_QOREX` stays in `PQAuth` for completeness, but no pool deploys with it unless Track A is proven later.
 
 ## D-002 — Accounts created with the SDK, not `qorechaind keys add` · 2026-11-22
 
@@ -38,3 +38,9 @@ Both routes deployed successfully in S2. But `forge script` executes the script 
 - AGENT_BRIEF §1.5 says never rewrite pushed history. The owner explicitly asked for this one exception: the first three commits (`f439e22`, `1248fc0`, `e6f8681`) were authored as "Claude" only, and the owner wants to be the author with Claude as co-author.
 - Done with `git filter-branch --env-filter` changing only author/committer name and email. **Commit dates, messages, trees and order are unchanged**, so the hackathon's "commits made during the event" check is unaffected. Follow-up the same day: the owner corrected the author email to the one on their GitHub account, so the commits were rewritten once more the same way (email only). Final hashes: `c750c76`, `435b8c9`, `a731739`, `b89aee9`.
 - From now on every commit is authored by the owner (`softalpha0`) with a `Co-Authored-By: Claude` trailer. No further history rewrites.
+
+## D-008 — S4 MetaMask run waived by owner; M0 closed · 2026-11-22
+
+- M0 acceptance requires S4 ("MetaMask tx … inside a scoped window"). The owner chose to skip the MetaMask run and move to M1.
+- Recorded instead: the same EIP-1559 tx sent from deployer's key with viem inside the scoped window, receipt parsed by viem (SPIKES.md S4, tx `0xa2db35a1…e5d4`). MetaMask did connect to chain 9800.
+- Residual risk: MetaMask signing and sending on 9800 is untested until M3. If it fails there, the app falls back to showing a script command (the same pattern as Track B).

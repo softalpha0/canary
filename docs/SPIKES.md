@@ -139,15 +139,33 @@ Conclusions:
 4. Gas: a bare `pqcVerify` `eth_call` estimates at ~312k. **Superseded by S2:** inside a tx, key lookup + verify cost ~154k, and a full PQ-authorised call ~235k (see S2 findings, `DECISIONS.md` D-004).
 5. An inactive precompile returns success with **empty** data: confirms PQAuth must fail closed on short returndata.
 
-### Track A (QoreX `signArbitrary`) — **PENDING (owner, browser)**
+### Track A (QoreX `signArbitrary`) — **NOT SETTLED; skipped by owner (2026-11-22)**
 
-Tool: `pnpm --filter scripts spike:page` → open `http://localhost:5174` with QoreX installed. The page signs the fixed digest `0x8404311f59f0ac17137acf43cf0fa749412488e891cdb0bc48c9915252776ecc` with each candidate encoding (`"0x"+hex` string, hex string without `0x`, raw `Uint8Array`). It reports the return shape and encoding (hex or base64), then tries `pqcVerify` with `prefix‖data`, `data` and the raw digest, using the QoreX account's on-chain key. The page's ABI and bech32 code was self-checked against the live precompile (`spikes/browser/selfcheck.ts` → PASS).
+What the owner's browser runs showed (spike page, QoreX desktop extension, account `qor1skjtefn4thsq8zz039azumk8h6g480jx3gfk0c`, whose key is registered and proven):
 
-## S4 — MetaMask tx on chain 9800 inside a scoped window
+- `window.qorex.native` exposes `signArbitrary` and `verifyArbitrary`. Capabilities: `listAccounts, connectProofPicksAccount, executeRequest, signAndBroadcast, signDirectAddsPqcLayer, signArbitrary`.
+- `signArbitrary(chainId, bech32, data)` returns `{signatureType, classical, pq, pub_key, signature}` for a string or `Uint8Array` `data`. **`signature` is the 64-byte classical secp256k1 signature (base64)**; the ML-DSA-87 part is in `pq`. The first run decoded the wrong field, so its `false` results say nothing about Track A.
+- The page was fixed to decode `pq` (tested end to end against a mock QoreX with a real ML-DSA-87 signature: `prefix ‖ data` → `pqcVerify` TRUE, `spikes/browser/mock-qorex-check.ts`). The re-run against real QoreX did not complete (no signing prompts approved). The owner chose to skip it.
 
-**Status: READY — waiting on the owner (MetaMask).** A scoped window is open on `deployer` for this test: tx `5BFC85182512DA7D8AF1B27FE998E90E8D8766147D590FDD02F4D4A24E83993E`, height 10575534 → expires 10592814 (~5 h), 5 txs, 1 QOR. Targets: Counter `0x66b774a7c51089162cfcab2eade7c624135f3a9c` and PQProbe `0xc8815608dbf829a9a42e80c3392c17b091a85e0f`.
+**Conclusion:** no QoreX encoding is proven, so `msgMode = MODE_RAW` is final (D-001). The app ships Track B ("Sign with the Canary CLI" modal), as plan 08's cut order allows. Track A can be revisited later with the same page; the leading candidate is `prefix ‖ utf8(data)` with the signature in `ret.pq`.
 
-Steps: import `deployer` into MetaMask → `pnpm --filter scripts spike:page` → `http://localhost:5174`, section S4, Counter = `0x66b774a7c51089162cfcab2eade7c624135f3a9c` → connect → send. Then `pnpm --filter scripts spike:s4 <hash>` parses the receipt with viem and lists any non-standard receipt fields (e.g. `feePayer`).
+## S4 — EVM tx on chain 9800 inside a scoped window, receipt parsed by viem
+
+**Status: PASS via script; MetaMask UI part waived by owner (2026-11-22).** See `DECISIONS.md` D-008.
+
+The owner's MetaMask connected to chain 9800 (`eth_chainId` = `0x2648`, chain added by the page), but on a non-deployer account, so no tx was sent from MetaMask. The owner chose to skip the MetaMask run. The same transaction was sent from deployer's eth_secp256k1 key with viem inside the scoped window (tx `5BFC8518…993E`, targets Counter + PQProbe):
+
+```text
+pnpm --filter scripts exec tsx spikes/s4-viem-fallback.ts && pnpm --filter scripts spike:s4 <hash>
+Counter.increment from deployer via viem: 0xa2db35a1d8a36eaa5bc8e2b574c21285bfbd644ba37398176041f96d80a8e5d4 (gas limit 56185)
+tx 0xa2db35a1…e5d4: from 0xfe8b…8aae to 0x66b7…3a9c type eip1559 chainId 9800 nonce 12
+receipt: status success block 10577106 gasUsed 44948 effectiveGasPrice 112500000000
+non-standard receipt fields: none
+event Incremented {"by":"0xfE8b3De9D3A40a528aaB7B966e6e26DD0e688aae","number":"1"}
+S4: PASS
+```
+
+Proven: a scoped window admits an EIP-1559 tx from the account's EVM key on 9800, and viem parses the receipt (no `feePayer` or other non-standard fields appeared). Not proven: MetaMask's own signing and sending on this chain. M3 will exercise it, since the web app sends through MetaMask.
 
 ## S5 — eth_getLogs max block range — **PASS** (2026-11-22)
 
