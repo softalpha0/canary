@@ -32,5 +32,5 @@ Scripts load `.env` with Node's built-in `process.loadEnvFile` (Node ≥ 20.12),
 ## D-006 — One-time author rewrite of the first 3 commits (owner-approved) · 2026-11-22
 
 - AGENT_BRIEF §1.5 says never rewrite pushed history. The owner explicitly asked for this one exception: the first three commits (`f439e22`, `1248fc0`, `e6f8681`) were authored as "Claude" only, and the owner wants to be the author with Claude as co-author.
-- Done with `git filter-branch --env-filter` changing only author/committer name and email. **Commit dates, messages, trees and order are unchanged**, so the hackathon's "commits made during the event" check is unaffected. New hashes: `7305282`, `5146689`, `7a11b49`.
+- Done with `git filter-branch --env-filter` changing only author/committer name and email. **Commit dates, messages, trees and order are unchanged**, so the hackathon's "commits made during the event" check is unaffected. Follow-up the same day: the owner corrected the author email to the one on their GitHub account, so the commits were rewritten once more the same way (email only). Final hashes: `c750c76`, `435b8c9`, `a731739`, `b89aee9`.
 - From now on every commit is authored by the owner (`softalpha0`) with a `Co-Authored-By: Claude` trailer. No further history rewrites.
