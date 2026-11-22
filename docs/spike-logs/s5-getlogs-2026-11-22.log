@@ -1,0 +1,27 @@
+head=10574259
+range     100: OK   0 logs, 233 ms
+range    1000: OK   11 logs, 100 ms
+range    5000: OK   192 logs, 269 ms
+range   10000: OK   501 logs, 390 ms
+range   50000: FAIL Details: maximum [from, to] blocks distance: 10000
+range  100000: FAIL Details: maximum [from, to] blocks distance: 10000
+range  200000: FAIL Details: maximum [from, to] blocks distance: 10000
+range  100000: FAIL Details: maximum [from, to] blocks distance: 10000
+range   50000: FAIL Details: maximum [from, to] blocks distance: 10000
+range   25000: FAIL Details: maximum [from, to] blocks distance: 10000
+range   12500: FAIL Details: maximum [from, to] blocks distance: 10000
+range    6250: OK   230 logs, 256 ms
+range    9375: OK   473 logs, 356 ms
+range   10937: FAIL Details: maximum [from, to] blocks distance: 10000
+range   10156: FAIL Details: maximum [from, to] blocks distance: 10000
+range    9765: OK   480 logs, 413 ms
+range    9960: OK   492 logs, 777 ms
+range   10058: FAIL Details: maximum [from, to] blocks distance: 10000
+range   10009: FAIL Details: maximum [from, to] blocks distance: 10000
+range    9984: OK   501 logs, 380 ms
+range    9996: OK   501 logs, 409 ms
+range   10002: FAIL Details: maximum [from, to] blocks distance: 10000
+range    9999: OK   501 logs, 368 ms
+range   10000: OK   501 logs, 377 ms
+range   10001: OK   501 logs, 382 ms
+S5 RESULT: max eth_getLogs range = 10001 blocks

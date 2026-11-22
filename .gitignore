@@ -23,3 +23,6 @@ lcov.info
 # Misc
 .DS_Store
 scratch/
+
+# Spike evidence logs are committed (checked for secrets)
+!docs/spike-logs/*.log

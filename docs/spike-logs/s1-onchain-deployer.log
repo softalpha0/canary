@@ -1,0 +1,3 @@
+deployer: MsgRegisterPQCKeyV2 tx 68C64149B3BB9369F3725C6B7E0C04348B690202F021DE8489795A8CA227D7CC height 10575411
+  pqcKeyStatus(0xfE8b3De9D3A40a528aaB7B966e6e26DD0e688aae) = (true, 1, <2592 bytes>, true)  onchain==sdk: true  onchain==qoresign: true  → PASS
+S1: PASS

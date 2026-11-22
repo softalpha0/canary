@@ -1,0 +1,4 @@
+UNSCOPED deploy window opened for deployer qor1l69nm6wn5s999z4t0wtxum3xm58x3z4wghxvu9
+  tx 264D73FFD5069FA662D87EE5AE83D0245A815602D58014EA3BB223832F49E002 height 10575485
+  blocks=600 maxTxs=3 maxValue=1.000000 QOR targets=any
+  Opening advanced the account nonce: wait ~10 s, then read the nonce before sending EVM txs.

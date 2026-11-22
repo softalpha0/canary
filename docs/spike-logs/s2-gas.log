@@ -1,0 +1,6 @@
+deploy Counter               109605
+deploy PQProbe               526146
+PQProbe.probe (PQ-auth'd)    235076
+0xc3fdc32927… gasLimit 1500000 gasUsed 750000 ratio 0.500
+0x29b69e0eb0… gasLimit 1500000 gasUsed 750000 ratio 0.500
+0x45cbdf4f64… gasLimit 1000000 gasUsed 500000 ratio 0.500

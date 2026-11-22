@@ -1,0 +1,4 @@
+deployer  pubkey 2592B keccak=0x5d44d7e9191ae358… qoresign==sdk: true
+lp1       pubkey 2592B keccak=0x2c47f699f5e73316… qoresign==sdk: true
+buyer1    pubkey 2592B keccak=0x8f0034b8c889406c… qoresign==sdk: true
+reporter  pubkey 2592B keccak=0x9118dd3a2300998e… qoresign==sdk: true

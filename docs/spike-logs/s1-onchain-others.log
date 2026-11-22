@@ -1,0 +1,7 @@
+lp1: MsgRegisterPQCKeyV2 tx 54293291CE0C7FA4A2C98FA18565C678B1F79245854ADDA3B82492AE7170FB22 height 10575431
+  pqcKeyStatus(0xa71ddC5e470130248D396d966b1956CF3f7c9eEb) = (true, 1, <2592 bytes>, true)  onchain==sdk: true  onchain==qoresign: true  → PASS
+buyer1: MsgRegisterPQCKeyV2 tx E3C64EC3FC3445D23217AF343C95E685D48EB58FA4BADB8A7884F2EB4AF1EE55 height 10575433
+  pqcKeyStatus(0x4DF6ED71f117dfFfB2e64Dab748A061f3A71e52B) = (true, 1, <2592 bytes>, true)  onchain==sdk: true  onchain==qoresign: true  → PASS
+reporter: MsgRegisterPQCKeyV2 tx B0782133FF8788A59569ADB3B9150746A36EAC701B9943E41B670227D491CD67 height 10575435
+  pqcKeyStatus(0xf85f3fF485e0F2Dc0CBaA0D395e775c5f6598Dc7) = (true, 1, <2592 bytes>, true)  onchain==sdk: true  onchain==qoresign: true  → PASS
+S1: PASS

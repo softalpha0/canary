@@ -1,0 +1,19 @@
+Compiling 16 files with Solc 0.8.24
+Solc 0.8.24 finished in 795.82ms
+Compiler run successful!
+Script ran successfully.
+
+== Return ==
+c: contract Counter 0x95D0A6F4E64989336B776d142AbAf5C675280A3B
+
+SKIPPING ON CHAIN SIMULATION.
+
+
+==========================
+
+ONCHAIN EXECUTION COMPLETE & SUCCESSFUL.
+
+Transactions saved to: /home/user/canary/contracts/broadcast/SpikeDeploy.s.sol/9800/run-latest.json
+
+Sensitive values saved to: /home/user/canary/contracts/cache/SpikeDeploy.s.sol/9800/run-latest.json
+
