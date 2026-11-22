@@ -20,7 +20,8 @@ contract PQProbe {
         view
         returns (bool registered, uint8 algorithmId, bytes memory pubkey, bool proven)
     {
-        (bool ok, bytes memory ret) = PQC_KEY_STATUS.staticcall(abi.encodeWithSignature("pqcKeyStatus(address)", account));
+        (bool ok, bytes memory ret) =
+            PQC_KEY_STATUS.staticcall(abi.encodeWithSignature("pqcKeyStatus(address)", account));
         if (!ok || ret.length < 128) revert PrecompileUnavailable(PQC_KEY_STATUS, ret.length);
         return abi.decode(ret, (bool, uint8, bytes, bool));
     }
