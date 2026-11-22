@@ -1,0 +1,25 @@
+# Secrets — never commit (AGENT_BRIEF §2)
+.env
+.env.*
+!.env.example
+*.dilithium
+keys/
+secrets/
+*.mnemonic
+
+# Node
+node_modules/
+dist/
+.vite/
+*.log
+coverage/
+
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+lcov.info
+
+# Misc
+.DS_Store
+scratch/
