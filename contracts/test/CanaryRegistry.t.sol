@@ -8,7 +8,10 @@ contract CanaryRegistryTest is Test {
     CanaryRegistry internal reg;
     uint256 internal testCanaryKey = 0xC0FFEE;
     address internal testCanary;
-    address internal realCanary = address(0x1234567890123456789012345678901234567890); // placeholder until M2 derivation
+    /// @dev RFC 9380 hash_to_curve("QoreChain Canary 2026 #1", DST "CANARY-V1-QORECHAIN_XMD:SHA-256_SSWU_RO_")
+    ///      → keccak256(X‖Y)[12:], from scripts/derive-canary.ts (deployments/canary.json).
+    address internal constant REAL_CANARY = 0xcE071018914e03Cb1eC2aD9e3EbbA7af87dB305D;
+    address internal realCanary = REAL_CANARY;
     address internal reporter = makeAddr("reporter");
 
     event CanaryDied(uint256 indexed id, address indexed reporter, uint64 deadAt, bool isTest);
@@ -166,6 +169,17 @@ contract CanaryRegistryTest is Test {
         vm.chainId(1);
         vm.expectRevert(CanaryRegistry.InvalidBreakSignature.selector);
         reg.reportBreak(1, reporter, v, r, s);
+    }
+
+    function test_realCanary_equalsDerivedAddress() public view {
+        string memory json = vm.readFile("../deployments/canary.json");
+        assertEq(vm.parseJsonAddress(json, ".address"), REAL_CANARY, "canary.json");
+        assertEq(vm.parseJsonString(json, ".msg"), "QoreChain Canary 2026 #1");
+        assertEq(vm.parseJsonString(json, ".dst"), "CANARY-V1-QORECHAIN_XMD:SHA-256_SSWU_RO_");
+        assertEq(reg.getCanary(0).addr, REAL_CANARY, "registry canary #0");
+        // the derived point's address is keccak256(X || Y)[12:]
+        bytes memory xy = abi.encodePacked(vm.parseJsonBytes32(json, ".x"), vm.parseJsonBytes32(json, ".y"));
+        assertEq(address(uint160(uint256(keccak256(xy)))), REAL_CANARY, "keccak(X||Y)");
     }
 
     function test_breakDigest_matchesSpec() public view {

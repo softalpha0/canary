@@ -1,0 +1,9 @@
+{
+  "msg": "QoreChain Canary 2026 #1",
+  "dst": "CANARY-V1-QORECHAIN_XMD:SHA-256_SSWU_RO_",
+  "x": "0x16a21cb0f3e0adb1fc30c272ef8c9664fe28cf49dc8dd469e1f3b78aa364509e",
+  "y": "0x8d1fbcc114dd6764b105ab33e0ec215fc878ed4aa70e0250bf3cd7c840d133b8",
+  "pubkey": "0x0416a21cb0f3e0adb1fc30c272ef8c9664fe28cf49dc8dd469e1f3b78aa364509e8d1fbcc114dd6764b105ab33e0ec215fc878ed4aa70e0250bf3cd7c840d133b8",
+  "address": "0xcE071018914e03Cb1eC2aD9e3EbbA7af87dB305D",
+  "qor": "qor1ecr3qxy3fcpuk8kz4k0rawa847rakvzah2xdck"
+}

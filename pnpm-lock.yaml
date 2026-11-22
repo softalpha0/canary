@@ -10,6 +10,9 @@ importers:
 
   scripts:
     dependencies:
+      '@noble/curves':
+        specifier: 2.4.0
+        version: 2.4.0
       '@qorechain/pqc':
         specifier: 0.2.3
         version: 0.2.3

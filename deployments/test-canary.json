@@ -1,0 +1,5 @@
+{
+  "label": "TEST canary",
+  "address": "0x0Ae21f953E44fcf539D3842f2A5A6D8e2095c7A5",
+  "note": "Key held by the team for demos (in .env, never committed)."
+}

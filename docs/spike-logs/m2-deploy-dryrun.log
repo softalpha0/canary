@@ -1,0 +1,9 @@
+[DRY RUN] deployer 0xfE8b3De9D3A40a528aaB7B966e6e26DD0e688aae on chain 9800 via http://127.0.0.1:8545
+real canary 0xcE071018914e03Cb1eC2aD9e3EbbA7af87dB305D  test canary 0x0Ae21f953E44fcf539D3842f2A5A6D8e2095c7A5
+CanaryRegistry  0x21ce4c3a38f61dade2cab0fb6201894856e529ef  tx 0x35c0fd108d049ea5e08f8aaceef70493e650ef789ca33d0505feebd26c9ddbf2  block 10578085  gas 982073/1227591 (est 982073)
+CoverPool       0xdd48535dde4b62c87ed8397cdaa574f9774cf77e  tx 0x82fd0203595408c17f978c88569feec1bfd55d78aa4ec86ba29d63f0de7a1524  block 10578086  gas 2873586/3591982 (est 2873586)
+CoverPool       0x7f3f615f890ecb7ae4aca0c72204779ae199bbbd  tx 0x14cd9c8577213ab679c965de6f50c4388edc5f78520b1626713a05a2cc89be05  block 10578087  gas 2873538/3591922 (est 2873538)
+bytecode CanaryRegistry  MATCH (2944 bytes, 0 immutable bytes masked)
+bytecode CoverPool #0    MATCH (12628 bytes, 28 immutable bytes masked)
+bytecode CoverPool #1    MATCH (12628 bytes, 28 immutable bytes masked)
+→ /home/user/canary/deployments/dryrun.json

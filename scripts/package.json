@@ -13,9 +13,19 @@
     "spike:s3b": "tsx spikes/s3-trackb-pqcverify.ts",
     "spike:s4": "tsx spikes/s4-receipt.ts",
     "spike:s5": "tsx spikes/s5-getlogs-range.ts",
-    "spike:page": "tsx spikes/browser/serve.ts"
+    "spike:page": "tsx spikes/browser/serve.ts",
+    "canary:derive": "tsx derive-canary.ts",
+    "canary:verify": "tsx verify-canary.ts",
+    "canary:gen-test": "tsx gen-test-canary.ts",
+    "demo:kill": "tsx kill-test-canary.ts",
+    "demo:try-real": "tsx try-real.ts",
+    "pq:sign": "tsx pq-sign.ts",
+    "deploy:testnet": "tsx deploy.ts",
+    "verify:bytecode": "tsx verify-bytecode.ts",
+    "seed": "tsx seed.ts"
   },
   "dependencies": {
+    "@noble/curves": "2.4.0",
     "@qorechain/pqc": "0.2.3",
     "@qorechain/qoresign": "0.2.0",
     "@qorechain/sdk": "0.14.0",

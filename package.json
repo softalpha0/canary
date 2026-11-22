@@ -9,6 +9,14 @@
   "scripts": {
     "test:scripts": "pnpm --filter scripts test",
     "window": "pnpm --filter scripts window",
-    "accounts": "pnpm --filter scripts accounts"
+    "accounts": "pnpm --filter scripts accounts",
+    "canary:derive": "pnpm --filter scripts canary:derive",
+    "canary:verify": "pnpm --filter scripts canary:verify",
+    "canary:gen-test": "pnpm --filter scripts canary:gen-test",
+    "demo:kill": "pnpm --filter scripts demo:kill",
+    "demo:try-real": "pnpm --filter scripts demo:try-real",
+    "pq:sign": "pnpm --filter scripts pq:sign",
+    "deploy:testnet": "pnpm --filter scripts deploy:testnet",
+    "verify:bytecode": "pnpm --filter scripts verify:bytecode"
   }
 }
