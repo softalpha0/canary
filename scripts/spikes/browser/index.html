@@ -167,6 +167,7 @@ const b64 = (u8) => btoa(String.fromCharCode(...u8));
 
 $("qx-run").onclick = async () => {
   if (!qx || !pubkey) return log("[S3A] connect QoreX first");
+  log("[S3A] starting: 3 signing prompts will appear in QoreX");
   const d = fromHex(DIGEST_HEX);
   const prefix = enc.encode(`qorechain-msg-v1|${CHAIN_ID}|`);
   const candidates = [
@@ -177,6 +178,7 @@ $("qx-run").onclick = async () => {
   const results = [];
   for (const c of candidates) {
     try {
+      log(`[S3A] ${c.name}: asking QoreX to sign — approve the QoreX popup (${candidates.indexOf(c) + 1}/3)…`);
       const ret = await qx.signArbitrary(CHAIN_ID, bech, c.data);
       log(`[S3A] ${c.name}: returned ${shapeOf(ret)}`);
       const { sig, pk } = pqParts(ret);
