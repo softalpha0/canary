@@ -1,0 +1,30 @@
+{
+  "name": "scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "window": "tsx window.ts",
+    "accounts": "tsx accounts.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "spike:s1:local": "tsx spikes/s1-local-derivation.ts",
+    "spike:s1": "tsx spikes/s1-onchain.ts",
+    "spike:s2": "tsx spikes/s2-deploy-and-scope.ts",
+    "spike:s3b": "tsx spikes/s3-trackb-pqcverify.ts",
+    "spike:s4": "tsx spikes/s4-receipt.ts",
+    "spike:s5": "tsx spikes/s5-getlogs-range.ts",
+    "spike:page": "tsx spikes/browser/serve.ts"
+  },
+  "dependencies": {
+    "@qorechain/pqc": "0.2.3",
+    "@qorechain/qoresign": "0.2.0",
+    "@qorechain/sdk": "0.14.0",
+    "viem": "^2.58.4"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
+  }
+}

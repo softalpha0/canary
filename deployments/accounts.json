@@ -1,0 +1,22 @@
+[
+  {
+    "name": "deployer",
+    "qor": "qor1l69nm6wn5s999z4t0wtxum3xm58x3z4wghxvu9",
+    "evm": "0xfE8b3De9D3A40a528aaB7B966e6e26DD0e688aae"
+  },
+  {
+    "name": "lp1",
+    "qor": "qor15uwachj8qyczfrfedktxkx2keulhe8htlhmwk9",
+    "evm": "0xa71ddC5e470130248D396d966b1956CF3f7c9eEb"
+  },
+  {
+    "name": "buyer1",
+    "qor": "qor1fhmw6u03zl0llvhxfk4hfzsxrua8reftcxtzjj",
+    "evm": "0x4DF6ED71f117dfFfB2e64Dab748A061f3A71e52B"
+  },
+  {
+    "name": "reporter",
+    "qor": "qor1lp0nlay9uredcr965rfetem4chm9nrw8uqpwfz",
+    "evm": "0xf85f3fF485e0F2Dc0CBaA0D395e775c5f6598Dc7"
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "name": "canary",
+  "private": true,
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test:scripts": "pnpm --filter scripts test",
+    "window": "pnpm --filter scripts window",
+    "accounts": "pnpm --filter scripts accounts"
+  }
+}
