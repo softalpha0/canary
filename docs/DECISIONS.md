@@ -44,3 +44,13 @@ Both routes deployed successfully in S2. But `forge script` executes the script 
 - M0 acceptance requires S4 ("MetaMask tx … inside a scoped window"). The owner chose to skip the MetaMask run and move to M1.
 - Recorded instead: the same EIP-1559 tx sent from deployer's key with viem inside the scoped window, receipt parsed by viem (SPIKES.md S4, tx `0xa2db35a1…e5d4`). MetaMask did connect to chain 9800.
 - Residual risk: MetaMask signing and sending on 9800 is untested until M3. If it fails there, the app falls back to showing a script command (the same pattern as Track B).
+
+## D-009 — Small additions to the contract spec · 2026-11-22 (M1)
+
+None changes behaviour the plan defines. They make failures explicit:
+
+- **Implicit nonce.** Authorised functions take no `nonce` argument (as specified); the pool signs over `nonces[owner]`. A replayed signature therefore fails as `PQBadSignature` (the nonce moved on), not `BadNonce`. `BadNonce(expected)` is exercised in the explicit-nonce `PQAuthHarness` (`PQAuth.t.sol`). Replay is covered by unit tests and by invariant 5 (`invariant_noReplay`, 256 × 50).
+- **Extra errors:** `ZeroAmount` (zero cover/shares, cover > uint128, deposit that mints 0 shares), `ZeroAddress` (zero registry/admin/recipient), `UnknownId` (out-of-range request/policy id), `BadConfig` (constructor bounds: minDuration > 0, min ≤ max, bps ≤ 10,000, rate ≤ maxRate, mode ≤ 1, minDeposit > 0, canaryId < registry.count()). `PQAuth` adds `PQBadPubkeyLength` (pubkey ≠ 2,592 bytes; the plan asks for the check but names no error) and `PQBadMode`. `CanaryRegistry` adds `InvalidCanary(index)` and `NoCanaries` for constructor validation.
+- **Extra views:** `CanaryRegistry.getCanary(id)` (full struct incl. strings, for the app), `CoverPool.totalAssets()` / `isDead()`, and public action constants (`CLAIM_PAYOUT()` etc.) so scripts read them from the contract.
+- **Settled pools:** `expire()` reverts `AlreadySettled` after settlement (activeCover is already 0; subtracting again would underflow).
+- **Not yet done:** plan 07's "real canary address == derived constant" test needs the M2 derivation script (`derive-canary.ts`); it lands in M2.
