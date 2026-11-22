@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canary M0 Spikes</title>
+<style>
+  :root { --bg:#0e0f12; --fg:#e8e8ea; --muted:#9a9ca3; --accent:#F5C518; --ok:#3ecf6e; --bad:#ff5c5c; --panel:#17191e; }
+  body { background:var(--bg); color:var(--fg); font:15px/1.5 system-ui, sans-serif; margin:0; padding:24px 16px; }
+  main { max-width: 920px; margin: 0 auto; }
+  h1 { color:var(--accent); margin:0 0 4px; } h2 { margin:28px 0 8px; }
+  section { background:var(--panel); border-radius:10px; padding:16px; margin:12px 0; }
+  button { background:var(--accent); color:#111; border:0; border-radius:6px; padding:8px 14px; font-weight:600; cursor:pointer; margin:4px 4px 4px 0; }
+  button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  input { background:#0b0c0f; color:var(--fg); border:1px solid #333; border-radius:6px; padding:7px; width:100%; box-sizing:border-box; font-family:ui-monospace,monospace; }
+  pre { background:#0b0c0f; padding:12px; border-radius:6px; overflow:auto; white-space:pre-wrap; word-break:break-all; font:12.5px/1.45 ui-monospace,monospace; max-height:420px; }
+  .muted { color:var(--muted); } .ok { color:var(--ok); } .bad { color:var(--bad); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Canary — M0 browser spikes</h1>
+  <p class="muted">Testnet only (qorechain-diana / EVM 9800). This page never asks for a mnemonic or private key. Copy the log at the bottom into the chat when done.</p>
+
+  <h2>S4 — MetaMask tx inside a scoped window</h2>
+  <section>
+    <p>Prereq: the account imported into MetaMask is <b>deployer</b> (from <code>.env</code>), and the agent has opened a scoped window whose targets include the Counter below.</p>
+    <label>Counter address (target)<input id="counter" placeholder="0x…"></label>
+    <p>
+      <button id="mm-connect">1. Connect MetaMask + switch to 9800</button>
+      <button id="mm-send">2. Send Counter.increment()</button>
+    </p>
+  </section>
+
+  <h2>S3 Track A — QoreX signArbitrary → pqcVerify</h2>
+  <section>
+    <p>Prereq: QoreX desktop extension installed, holding an account whose ML-DSA-87 key is registered on-chain (ideally <b>deployer</b>). Each candidate asks QoreX to sign once; approve each prompt.</p>
+    <p>
+      <button id="qx-connect">1. Connect QoreX</button>
+      <button id="qx-run">2. Try all encodings</button>
+    </p>
+  </section>
+
+  <h2>Log</h2>
+  <pre id="log" aria-live="polite"></pre>
+  <button id="copy">Copy log</button>
+</main>
+<script>
+"use strict";
+const CHAIN_ID = "qorechain-diana", EVM_CHAIN_HEX = "0x2648", RPC = "https://evm-testnet.qore.host";
+const PQC_VERIFY = "0x0000000000000000000000000000000000000a01", PQC_KEY_STATUS = "0x0000000000000000000000000000000000000a02";
+// Fixed spike digest: keccak256("Canary spike S3 track A") — computed by scripts, pasted here so the page needs no hash lib.
+const DIGEST_HEX = "__DIGEST__";
+const $ = (id) => document.getElementById(id);
+const logEl = $("log");
+function log(...a) { logEl.textContent += a.map((x) => typeof x === "string" ? x : JSON.stringify(x)).join(" ") + "\n"; logEl.scrollTop = 1e9; }
+$("copy").onclick = () => navigator.clipboard.writeText(logEl.textContent);
+
+const enc = new TextEncoder();
+const hex = (u8) => "0x" + [...u8].map((b) => b.toString(16).padStart(2, "0")).join("");
+const fromHex = (h) => { h = h.replace(/^0x/, ""); return Uint8Array.from(h.match(/../g) || [], (x) => parseInt(x, 16)); };
+const fromB64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+const concat = (...xs) => { const o = new Uint8Array(xs.reduce((n, x) => n + x.length, 0)); let i = 0; for (const x of xs) { o.set(x, i); i += x.length; } return o; };
+
+// ---- minimal ABI encoding for pqcVerify(bytes,bytes,bytes) and pqcKeyStatus(address)
+const word = (n) => n.toString(16).padStart(64, "0");
+const padBytes = (u8) => { const len = word(u8.length); const body = hex(u8).slice(2); return len + body.padEnd(Math.ceil(body.length / 64) * 64, "0"); };
+const SEL_VERIFY = "__SEL_VERIFY__";
+const SEL_KEYSTATUS = "__SEL_KEYSTATUS__";
+
+async function ethCall(to, data) {
+  const body = { jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to, data }, "latest"] };
+  try {
+    const r = await fetch(RPC, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).then((x) => x.json());
+    if (r.error) throw new Error(r.error.message); return r.result;
+  } catch (e) {
+    if (!window.ethereum) throw e;
+    return window.ethereum.request({ method: "eth_call", params: [{ to, data }, "latest"] });
+  }
+}
+
+// ---- bech32 decode (qor1… → 20 bytes), BIP-173
+const CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+function bech32ToHex(addr) {
+  const data = addr.slice(addr.lastIndexOf("1") + 1, -6).split("").map((c) => CHARSET.indexOf(c));
+  let acc = 0, bits = 0; const out = [];
+  for (const v of data) { acc = (acc << 5) | v; bits += 5; while (bits >= 8) { bits -= 8; out.push((acc >> bits) & 0xff); } }
+  return hex(Uint8Array.from(out));
+}
+
+// ---------------- S4
+let mmAccount = null;
+$("mm-connect").onclick = async () => {
+  try {
+    if (!window.ethereum) throw new Error("No injected EVM wallet (MetaMask) found.");
+    try { await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: EVM_CHAIN_HEX }] }); }
+    catch (e) {
+      if (e.code !== 4902) throw e;
+      await window.ethereum.request({ method: "wallet_addEthereumChain", params: [{ chainId: EVM_CHAIN_HEX, chainName: "QoreChain Testnet", nativeCurrency: { name: "QOR", symbol: "QOR", decimals: 18 }, rpcUrls: [RPC] }] });
+    }
+    [mmAccount] = await window.ethereum.request({ method: "eth_requestAccounts" });
+    const cid = await window.ethereum.request({ method: "eth_chainId" });
+    log(`[S4] MetaMask account ${mmAccount} chainId ${cid}`);
+  } catch (e) { log(`[S4] connect error: ${e.message || e}`); }
+};
+$("mm-send").onclick = async () => {
+  try {
+    const to = $("counter").value.trim();
+    if (!/^0x[0-9a-fA-F]{40}$/.test(to)) throw new Error("Enter the Counter address first.");
+    // increment() selector = 0xd09de08a ; explicit gas, EIP-1559 left to MetaMask
+    const hash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: mmAccount, to, data: "0xd09de08a", gas: "0x186a0" }] });
+    log(`[S4] MetaMask tx hash ${hash}  → run: pnpm --filter scripts exec tsx spikes/s4-receipt.ts ${hash}`);
+  } catch (e) { log(`[S4] send error: code=${e.code} ${e.message || e}`); }
+};
+
+// ---------------- S3 Track A
+let qx = null, bech = null, pubkey = null;
+$("qx-connect").onclick = async () => {
+  try {
+    qx = window.qorex && window.qorex.native;
+    if (!qx) throw new Error("window.qorex.native not found — is the QoreX desktop extension installed and enabled?");
+    log(`[S3A] qorex.native keys: ${Object.keys(qx).join(", ")}`);
+    if (qx.capabilities) log(`[S3A] capabilities: ${JSON.stringify(await (typeof qx.capabilities === "function" ? qx.capabilities() : qx.capabilities))}`);
+    await qx.enable(CHAIN_ID);
+    const key = await qx.getKey(CHAIN_ID);
+    bech = key.bech32Address;
+    const evm = bech32ToHex(bech);
+    log(`[S3A] QoreX account ${bech} = ${evm}`);
+    const ks = await ethCall(PQC_KEY_STATUS, "0x" + SEL_KEYSTATUS + word(BigInt(evm)));
+    const w = ks.slice(2);
+    const registered = BigInt("0x" + w.slice(0, 64)) === 1n, algo = Number(BigInt("0x" + w.slice(64, 128))), proven = BigInt("0x" + w.slice(192, 256)) === 1n;
+    const off = Number(BigInt("0x" + w.slice(128, 192))) * 2, len = Number(BigInt("0x" + w.slice(off, off + 64)));
+    pubkey = fromHex(w.slice(off + 64, off + 64 + len * 2));
+    log(`[S3A] pqcKeyStatus = (registered=${registered}, algo=${algo}, pubkey=${pubkey.length}B, proven=${proven})`);
+  } catch (e) { log(`[S3A] connect error: ${e.message || e}`); }
+};
+
+function decodeSig(ret) {
+  const raw = ret && typeof ret === "object" ? (ret.signature ?? ret.sig ?? ret.pqcSignature ?? ret) : ret;
+  if (raw instanceof Uint8Array) return { bytes: raw, form: "Uint8Array" };
+  if (typeof raw === "string") {
+    if (/^(0x)?[0-9a-fA-F]+$/.test(raw) && raw.replace(/^0x/, "").length % 2 === 0) return { bytes: fromHex(raw), form: raw.startsWith("0x") ? "hex 0x" : "hex" };
+    try { return { bytes: fromB64(raw), form: "base64" }; } catch {}
+  }
+  return { bytes: null, form: typeof raw };
+}
+
+$("qx-run").onclick = async () => {
+  if (!qx || !pubkey) return log("[S3A] connect QoreX first");
+  const d = fromHex(DIGEST_HEX);
+  const prefix = enc.encode(`qorechain-msg-v1|${CHAIN_ID}|`);
+  const candidates = [
+    { name: "string 0x-hex (66 chars)", data: DIGEST_HEX, bytes: enc.encode(DIGEST_HEX) },
+    { name: "string hex no 0x (64)", data: DIGEST_HEX.slice(2), bytes: enc.encode(DIGEST_HEX.slice(2)) },
+    { name: "Uint8Array raw 32 bytes", data: d, bytes: d },
+  ];
+  const results = [];
+  for (const c of candidates) {
+    try {
+      const ret = await qx.signArbitrary(CHAIN_ID, bech, c.data);
+      const shape = ret && typeof ret === "object" && !(ret instanceof Uint8Array) ? Object.keys(ret) : typeof ret;
+      const { bytes: sig, form } = decodeSig(ret);
+      log(`[S3A] ${c.name}: returned ${JSON.stringify(shape)}, signature form=${form}, ${sig ? sig.length : "?"} bytes`);
+      if (!sig) continue;
+      const msgs = [
+        ["prefix ‖ data", concat(prefix, c.bytes)],
+        ["data only", c.bytes],
+        ["raw digest", d],
+      ];
+      for (const [mname, m] of msgs) {
+        const r = await ethCall(PQC_VERIFY, "0x" + SEL_VERIFY + encVerifyBody(pubkey, sig, m));
+        const ok = BigInt(r || "0x0") === 1n;
+        log(`      pqcVerify(message = ${mname}, ${m.length}B) → ${ok ? "TRUE ✓" : "false"}`);
+        results.push({ input: c.name, sigForm: form, sigLen: sig.length, message: mname, ok });
+      }
+    } catch (e) { log(`[S3A] ${c.name}: error ${e.message || e}`); }
+  }
+  log(`[S3A] RESULT ${JSON.stringify(results.filter((r) => r.ok))}`);
+};
+function encVerifyBody(pk, sig, msg) {
+  const parts = [pk, sig, msg].map(padBytes); let off = 96; const heads = [];
+  for (const p of parts) { heads.push(word(BigInt(off))); off += p.length / 2; }
+  return heads.join("") + parts.join("");
+}
+</script>
+</body>
+</html>
