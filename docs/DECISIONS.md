@@ -54,3 +54,9 @@ None changes behaviour the plan defines. They make failures explicit:
 - **Extra views:** `CanaryRegistry.getCanary(id)` (full struct incl. strings, for the app), `CoverPool.totalAssets()` / `isDead()`, and public action constants (`CLAIM_PAYOUT()` etc.) so scripts read them from the contract.
 - **Settled pools:** `expire()` reverts `AlreadySettled` after settlement (activeCover is already 0; subtracting again would underflow).
 - **Not yet done:** plan 07's "real canary address == derived constant" test needs the M2 derivation script (`derive-canary.ts`); it lands in M2.
+
+## D-010 — QCAI Stage 1 before the testnet deploy (owner's choice) · 2026-11-23
+
+- Plan 08 orders M2 as: deploy, seed, then QCAI Stage 1. The owner wants the contracts deployed **once**, so Stage 1 runs first, on `contracts/flattened/Canary.flat.sol` at commit `3959f65`. Findings are fixed, and then `pnpm deploy:testnet` deploys the fixed code (rehearsed on a local fork: `docs/spike-logs/m2-deploy-dryrun.log`).
+- Stage 2 (M4) still audits the fixed code, so the two-stage requirement is unchanged.
+- Not affected: the test canary dies in the M4 E2E run, and a dead canary stays dead. Plan M7 already redeploys only the **test** registry and pool for the video. The real canary pool keeps its single deployment.
